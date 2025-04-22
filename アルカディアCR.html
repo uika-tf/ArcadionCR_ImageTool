@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アルカディアCR 画像ツール</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .row {
+            flex-direction: row;
+        }
+
+        .controls button {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .tab-menu{
+            display:flex;
+            list-style:none;
+            padding:0;
+        }
+
+        .tab-menu li {
+            padding: 10px 20px;
+            background-color: gray;
+            cursor: pointer;
+            margin-right: 5px;
+            color: white;
+        }
+
+        .tab-menu li.active {
+            background-color: dodgerblue;
+        }
+
+        .tab-content{
+            margin-top:0px;
+        }
+
+        .tab-content div{
+            padding:20px;
+            background-color:lightgray;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>アルカディアCR 画像ツール</h1>
+    <div class="container">
+        <canvas id="canvas" width="500" height="500"></canvas>
+        <div>
+            <div class="controls row">
+                <button onclick="saveImage()">PNGで保存</button>
+                <button onclick="toggleField()">フィールド切り替え</button>
+                <button onclick="resetAoE()">AoEリセット</button>
+            </div>
+
+            <div class="tab-container">
+                <ul class="tab-menu">
+                    <li class="active">キャラ</li>
+                    <li>汎用</li>
+                    <li>1層</li>
+                    <li>2層</li>
+                    <li>3層</li>
+                    <li>4層</li>
+                </ul>
+                <div class="tab-content">
+                    <div class="controls">
+                        <button onclick="toggleEnemyChara()">エネミー表示切り替え</button>
+                        <button onclick="togglePlayerChara()">プレイヤー表示切り替え</button>
+                        <button onclick="togglePlayerRole()">ロール切り替え</button>
+                        <button onclick="resetChara()">キャラ位置リセット</button>
+                    </div>
+                    <div class="controls" style="display:none;">
+                        <button onclick="toggleN()" style="min-width: 80px;">北半面</button>
+                        <button onclick="toggleS()" style="min-width: 80px;">南半面</button>
+                        <button onclick="toggleW()" style="min-width: 80px;">西半面</button>
+                        <button onclick="toggleE()" style="min-width: 80px;">東半面</button>
+                    </div>
+                    <div class="controls" style="display:none;">
+                        <button onclick="toggle8beat()">8ビート</button>
+                        <button onclick="toggleDiscoInfernal()">ディスコインファーナル</button>
+                        <button onclick="toggleFrogDancer()">フロッグダンサー</button>
+                        <button onclick="toggleDeepCut()">ディープカット +α</button>
+                        <button onclick="toggleDancingField()">ダンシングフィールド</button>
+                    </div>
+                    <div class="controls" style="display:none;">
+                    </div>
+                    <div class="controls" style="display:none;">
+                    </div>
+                    <div class="controls" style="display:none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const tabs = document.querySelectorAll('.tab-menu li');
+        const contents = document.querySelectorAll('.tab-content div');
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                contents.forEach(c => c.style.display = 'none');
+                contents[index].style.display = 'flex';
+
+                currentTab = tab.textContent.trim();
+            });
+        });
+
+        const Characters = [
+            { x: 0, y: 0, radius: 25, text: 'Boss', color: 'purple', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: 'Ｍ', color: 'blue', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: 'Ｓ', color: 'blue', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: '１', color: 'green', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: '２', color: 'green', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: '１', color: 'red', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: '２', color: 'red', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: '３', color: 'red', dragging: false, visible: true },
+            { x: 0, y: 0, radius: 20, text: '４', color: 'red', dragging: false, visible: true }
+        ];
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        const center = { x: width / 2, y: height / 2 };
+        const colors = ["lightgray", "lightpink", "hotpink"];
+        const gapSize = 0;
+        const segments = [];
+        let currentTab = "キャラ";
+        let activeDrag = null;
+        let playerRoleMode = 0;
+        let fieldMode = 0;
+        let showN = false;
+        let showS = false;
+        let showW = false;
+        let showE = false;
+        let show8beat = false;
+        let showDiscoInfernalMode = 0;
+        let frogDancerMode = 0;
+        let deepCutMode = 0;
+        let dancingFieldMode = 0;
+
+        function resetAoE() {
+            showN = showS = showW = showE = false;
+            show8beat = false;
+            showDiscoInfernalMode = 0;
+            frogDancerMode = 0;
+            deepCutMode = 0;
+            dancingFieldMode = 0;
+
+            segments.length = 0;
+            for (let y = 0; y < 8; y++) {
+                segments.push(new Array(8).fill(0));
+            }
+
+            drawImage();
+        }
+
+        function resetChara() {
+            Characters[0].x = center.x;
+            Characters[0].y = center.y;
+            Characters[1].x = center.x + 0;
+            Characters[1].y = center.y - 100;
+            Characters[2].x = center.x + 0;
+            Characters[2].y = center.y + 100;
+            Characters[3].x = center.x - 100;
+            Characters[3].y = center.y + 0;
+            Characters[4].x = center.x + 100;
+            Characters[4].y = center.y + 0;
+            Characters[5].x = center.x - 70;
+            Characters[5].y = center.y - 70;
+            Characters[6].x = center.x + 70;
+            Characters[6].y = center.y - 70;
+            Characters[7].x = center.x - 70;
+            Characters[7].y = center.y + 70;
+            Characters[8].x = center.x + 70;
+            Characters[8].y = center.y + 70;
+            drawImage();
+        }
+
+        function drawImage() {
+            ctx.clearRect(0, 0, width, height);
+
+            drawField();
+
+            drawQuadrants();
+            draw8beat();
+            drawDiscoInfernal();
+            drawFrogDancer();
+            drawDeepCut();
+
+            drawEnemy();
+            drawPlayers();
+        }
+
+        function drawField() {
+            ctx.save();
+            switch (fieldMode) {
+                case 0:
+                    let sW = 400 / 8;
+                    for (let x = 0; x < 8; x++) {
+                        for (let y = 0; y < 8; y++) {
+                            ctx.fillStyle = colors[segments[y][x]];
+                            ctx.fillRect(x * sW +50, y * sW +50, sW, sW);
+                            ctx.lineWidth = 2;
+                            ctx.strokeStyle = "white";
+                            ctx.globalCompositeOperation = 'destination-out';
+                            ctx.strokeRect(x * sW + 50, y * sW + 50, sW, sW);
+                            ctx.globalCompositeOperation = 'source-over';
+                        }
+                    }
+                    break;
+                case 1:
+                    ctx.fillStyle = colors[0];
+                    ctx.fillRect(50, 50, 400, 400);
+                    break;
+                case 2:
+                    ctx.fillStyle = colors[0];
+                    ctx.fillRect(150, 50, 200, 400);
+                    break;
+                case 3:
+                    ctx.fillStyle = colors[0];
+                    ctx.beginPath();
+                    ctx.arc(center.x, center.y, 200, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+            }
+            ctx.restore();
+        }
+
+        function drawPlayers() {
+            ctx.save();
+            Characters.slice(1).forEach((chara) => { 
+                if (!chara.visible) return;
+
+                ctx.fillStyle = playerRoleMode !== 2 ? chara.color : 'gray';
+                ctx.beginPath();
+                ctx.arc(chara.x, chara.y, chara.radius, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = 'darkgoldenrod';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                if (playerRoleMode === 0) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '16px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(chara.text, chara.x, chara.y);
+                }
+            });
+            ctx.restore();
+        }
+
+        function drawEnemy() {
+            ctx.save();
+            const enemy = Characters[0];
+            if (!enemy.visible) return;
+
+            ctx.fillStyle = enemy.color;
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, enemy.radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = 'darkgoldenrod';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = 'white';
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(enemy.text, enemy.x, enemy.y);
+            ctx.restore();
+        }
+
+        function drawQuadrants() {
+            ctx.save();
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = "orange";
+            const halfW = width / 2;
+            const halfH = height / 2;
+            if (showN) ctx.fillRect(0, 0, width, halfH);
+            if (showS) ctx.fillRect(0, halfH, width, halfH);
+            if (showW) ctx.fillRect(0, 0, halfW, height);
+            if (showE) ctx.fillRect(halfW, 0, halfW, height);
+            ctx.restore();
+        }
+
+        function draw8beat() {
+            if (!show8beat) return;
+
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = "orange";
+
+            Characters.slice(1).forEach((chara) => {
+                ctx.beginPath();
+                ctx.arc(chara.x, chara.y, 50, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        function drawDiscoInfernal() {
+            if (showDiscoInfernalMode === 0) return;
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.strokeStyle = "gray";
+            ctx.lineWidth = 2;
+
+            const capsuleRadius = 25;
+            const capsules = [[
+                    { x1: 300, y1: 125, x2: 300, y2: 375 },
+                    { x1: 200, y1: 375, x2: 200, y2: 125 },
+                    { x1: 125, y1: 200, x2: 375, y2: 200 },
+                    { x1: 375, y1: 300, x2: 125, y2: 300 },
+                ], [
+                    { x1: 250, y1: 125, x2: 250, y2: 375 },
+                    { x1: 375, y1: 250, x2: 125, y2: 250 },
+                    { x1: 125, y1: 375, x2: 375, y2: 125 },
+                ]
+            ];
+
+            capsules[showDiscoInfernalMode-1].forEach((capsule) => {
+                ctx.beginPath();
+                ctx.arc(capsule.x1, capsule.y1, capsuleRadius, 0, 2 * Math.PI); // 左側の円
+                ctx.fillStyle = "blue";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(capsule.x2, capsule.y2, capsuleRadius, 0, 2 * Math.PI); // 右側の円
+                ctx.fillStyle = "green";
+                ctx.fill();
+
+                const dx = capsule.x2 - capsule.x1;
+                const dy = capsule.y2 - capsule.y1;
+                const angle = Math.atan2(dy, dx) + Math.PI / 2;
+                const offsetX = capsuleRadius * Math.cos(angle);
+                const offsetY = capsuleRadius * Math.sin(angle);
+                ctx.beginPath();
+                ctx.moveTo(capsule.x1 + offsetX, capsule.y1 + offsetY);
+                ctx.lineTo(capsule.x2 + offsetX, capsule.y2 + offsetY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(capsule.x1 - offsetX, capsule.y1 - offsetY);
+                ctx.lineTo(capsule.x2 - offsetX, capsule.y2 - offsetY);
+                ctx.stroke();
+            });
+            ctx.restore();
+        }
+
+        function drawFrogDancer() {
+            if (frogDancerMode === 0) return;
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = "orange";
+            const cellSize = 50;
+
+            const patterns = [
+                { x1: 0, y1: 0, x2: 5, y2: 0, w: 3, h: 8 },
+                { x1: 0, y1: 0, x2: 0, y2: 5, w: 8, h: 3 },
+                { x1: 2, y1: 0, x2: 3, y2: 0, w: 3, h: 8 },
+                { x1: 0, y1: 2, x2: 0, y2: 3, w: 8, h: 3 },
+            ];
+
+            const pattern = patterns[frogDancerMode-1];
+
+            ctx.fillRect(pattern.x1 * cellSize + 50, pattern.y1 * cellSize + 50, pattern.w * cellSize, pattern.h * cellSize);
+            ctx.fillRect(pattern.x2 * cellSize + 50, pattern.y2 * cellSize + 50, pattern.w * cellSize, pattern.h * cellSize);
+
+            ctx.restore();
+        }
+
+        function drawDeepCut() {
+            if (deepCutMode === 0) return;
+
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = "red";
+
+            const enemy = Characters[0];
+            const radius = 400;
+            const angleWidth = Math.PI / 4;
+
+            const players = Characters.slice(1);
+            const targets = [];
+
+            if (deepCutMode === 1) {
+                targets.push(players[0], players[1]);
+            } else if (deepCutMode === 2) {
+                targets.push(players[0], players[1], players[2], players[3]);
+            } else if (deepCutMode === 3) {
+                targets.push(players[4], players[5], players[6], players[7]);
+            } else if (deepCutMode === 4) {
+                targets.push(...players);
+            }
+
+            targets.forEach((player) => {
+                const dx = player.x - enemy.x;
+                const dy = player.y - enemy.y;
+                const angle = Math.atan2(dy, dx);
+
+                ctx.beginPath();
+                ctx.moveTo(enemy.x, enemy.y);
+                ctx.arc(enemy.x, enemy.y, radius, angle - angleWidth / 2, angle + angleWidth / 2);
+                ctx.closePath();
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        canvas.addEventListener("click", (event) => {
+            if (currentTab === "キャラ") return;
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const segmentSize = 400 / 8;
+            const gridX = Math.floor((x - 50) / segmentSize);
+            const gridY = Math.floor((y - 50) / segmentSize);
+
+            if (gridX >= 0 && gridX < 8 && gridY >= 0 && gridY < 8) {
+                segments[gridY][gridX] = (segments[gridY][gridX] + 1) % colors.length;
+                drawImage();
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (currentTab !== "キャラ") return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            for (const chara of Characters) {
+                if (!chara.visible) continue;
+                const dx = x - chara.x;
+                const dy = y - chara.y;
+                if (Math.sqrt(dx * dx + dy * dy) <= chara.radius) {
+                    chara.dragging = true;
+                    activeDrag = chara;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!activeDrag) return;
+            const rect = canvas.getBoundingClientRect();
+            activeDrag.x = e.clientX - rect.left;
+            activeDrag.y = e.clientY - rect.top;
+            drawImage();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (activeDrag) activeDrag.dragging = false;
+            activeDrag = null;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            if (activeDrag) activeDrag.dragging = false;
+            activeDrag = null;
+        });
+
+
+        function toggleN() {
+            showN = !showN;
+            drawImage();
+        }
+
+        function toggleS() {
+            showS = !showS;
+            drawImage();
+        }
+
+        function toggleW() {
+            showW = !showW;
+            drawImage();
+        }
+
+        function toggleE() {
+            showE = !showE;
+            drawImage();
+        }
+
+        function toggle8beat() {
+            show8beat = !show8beat;
+            drawImage();
+        }
+
+        function toggleDiscoInfernal() {
+            showDiscoInfernalMode = (showDiscoInfernalMode + 1) % 3;
+            drawImage();
+        }
+
+        function toggleFrogDancer() {
+            frogDancerMode = (frogDancerMode + 1) % 5;
+            drawImage();
+        }
+
+        function toggleDeepCut() {
+            deepCutMode = (deepCutMode + 1) % 4;
+            drawImage();
+        }
+
+        function toggleDancingField() {
+            dancingFieldMode = (dancingFieldMode + 1) % 3;
+
+            for (let y = 0; y < 8; y++) {
+                for (let x = 0; x < 8; x++) {
+                    if (dancingFieldMode === 1) {
+                        segments[y][x] = (x + y) % 2;
+                    } else if (dancingFieldMode === 2) {
+                        segments[y][x] = (x + y + 1) % 2;
+                    } else {
+                        segments[y][x] = 0;
+                    }
+                }
+            }
+
+            drawImage();
+        }
+
+        function toggleField() {
+            fieldMode = (fieldMode + 1) % 4;
+            drawImage();
+        }
+        function toggleEnemyChara() {
+            Characters[0].visible = !Characters[0].visible;
+            drawImage();
+        }
+
+        function togglePlayerChara() {
+            Characters.slice(1).forEach((chara) => {chara.visible = !chara.visible;});
+            drawImage();
+        }
+
+        function togglePlayerRole() {
+            playerRoleMode = (playerRoleMode + 1) % 3;
+            drawImage();
+        }
+
+        function toggleCharaLock() {
+            for (let i = 0; i < Characters.length; i++) {
+                Characters[i].dragging = !Characters[i].dragging;
+            }
+            drawImage();
+        }
+
+        function saveImage() {
+            const link = document.createElement("a");
+            link.download = "arcadionCR.png";
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+
+        resetAoE();
+        resetChara();
+    </script>
+
+</body>
+</html>
