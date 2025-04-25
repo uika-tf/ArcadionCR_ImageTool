@@ -106,8 +106,9 @@
                         <button onclick="toggleE()" style="min-width: 80px;">東半面</button>
                     </div>
                     <div class="controls" style="display:none;">
-                        <button onclick="toggle8beat()">8ビート</button>
-                        <button onclick="toggleDiscoInfernal()">ディスコインファーナル</button>
+                        <button onclick="toggleBeat()">8ビート/4ビート</button>
+                        <button onclick="toggleDiscoInfernal1()">ディスコインファーナル1</button>
+                        <button onclick="toggleDiscoInfernal2()">ディスコインファーナル2</button>
                         <button onclick="toggleFrogDancer()">フロッグダンサー</button>
                         <button onclick="toggleDeepCut()">ディープカット +α</button>
                         <button onclick="toggleDancingField()">ダンシングフィールド</button>
@@ -143,8 +144,11 @@
             });
         });
 
-        const Characters = [
-            { x: 0, y: 0, radius: 20, text: 'Boss', color: 'purple', dragging: false, visible: true },
+        const Enemys = [
+            { x: 0, y: 0, radius: 20, text: 'Boss', color: 'purple', dragging: false, visible: true }
+        ]
+
+        const Players = [
             { x: 0, y: 0, radius: 15, text: 'Ｍ', color: 'blue', dragging: false, visible: true },
             { x: 0, y: 0, radius: 15, text: 'Ｓ', color: 'blue', dragging: false, visible: true },
             { x: 0, y: 0, radius: 15, text: '１', color: 'green', dragging: false, visible: true },
@@ -170,18 +174,23 @@
         let showS = false;
         let showW = false;
         let showE = false;
-        let show8beat = false;
-        let showDiscoInfernalMode = 0;
+        let showBeatMode = 0;
+        let showDiscoInfernal1Mode = 0;
+        let showDiscoInfernal2Mode = 0;
         let frogDancerMode = 0;
         let deepCutMode = 0;
         let dancingFieldMode = 0;
         let inOutMode = 0;
         let arcadionNightFeverMode = 0;
 
+        resetAoE();
+        resetChara();
+
         function resetAoE() {
             showN = showS = showW = showE = false;
-            show8beat = false;
-            showDiscoInfernalMode = 0;
+            showBeatMode = 0;
+            showDiscoInfernal1Mode = 0;
+            showDiscoInfernal2Mode = 0;
             frogDancerMode = 0;
             deepCutMode = 0;
             dancingFieldMode = 0;
@@ -197,24 +206,24 @@
         }
 
         function resetChara() {
-            Characters[0].x = center.x;
-            Characters[0].y = center.y;
-            Characters[1].x = center.x + 0;
-            Characters[1].y = center.y - 100;
-            Characters[2].x = center.x + 0;
-            Characters[2].y = center.y + 100;
-            Characters[3].x = center.x - 100;
-            Characters[3].y = center.y + 0;
-            Characters[4].x = center.x + 100;
-            Characters[4].y = center.y + 0;
-            Characters[5].x = center.x - 70;
-            Characters[5].y = center.y - 70;
-            Characters[6].x = center.x + 70;
-            Characters[6].y = center.y - 70;
-            Characters[7].x = center.x - 70;
-            Characters[7].y = center.y + 70;
-            Characters[8].x = center.x + 70;
-            Characters[8].y = center.y + 70;
+            Enemys[0].x = center.x;
+            Enemys[0].y = center.y;
+            Players[0].x = center.x + 0;
+            Players[0].y = center.y - 100;
+            Players[1].x = center.x + 0;
+            Players[1].y = center.y + 100;
+            Players[2].x = center.x - 100;
+            Players[2].y = center.y + 0;
+            Players[3].x = center.x + 100;
+            Players[3].y = center.y + 0;
+            Players[4].x = center.x - 70;
+            Players[4].y = center.y - 70;
+            Players[5].x = center.x + 70;
+            Players[5].y = center.y - 70;
+            Players[6].x = center.x - 70;
+            Players[6].y = center.y + 70;
+            Players[7].x = center.x + 70;
+            Players[7].y = center.y + 70;
             drawImage();
         }
 
@@ -224,8 +233,9 @@
             drawField();
 
             drawQuadrants();
-            draw8beat();
-            drawDiscoInfernal();
+            drawBeat();
+            drawDiscoInfernal1();
+            drawDiscoInfernal2();
             drawFrogDancer();
             drawDeepCut();
             drawCircleRing();
@@ -272,16 +282,10 @@
 
         function drawPlayers() {
             ctx.save();
-            Characters.slice(1).forEach((chara) => { 
+            Players.forEach((chara) => { 
                 if (!chara.visible) return;
 
-                ctx.fillStyle = playerRoleMode !== 2 ? chara.color : 'gray';
-                ctx.beginPath();
-                ctx.arc(chara.x, chara.y, chara.radius, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.strokeStyle = 'darkgoldenrod';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+                drawCircleStroke(chara, chara.radius, playerRoleMode !== 2 ? chara.color : 'gray', 2, 'darkgoldenrod');
 
                 if (playerRoleMode === 0) {
                     ctx.fillStyle = 'white';
@@ -296,17 +300,9 @@
 
         function drawEnemy() {
             ctx.save();
-            const enemy = Characters[0];
+            const enemy = Enemys[0];
             if (!enemy.visible) return;
-
-            ctx.fillStyle = enemy.color;
-            ctx.beginPath();
-            ctx.arc(enemy.x, enemy.y, enemy.radius, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.strokeStyle = 'darkgoldenrod';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
+            drawCircleStroke(enemy, enemy.radius, enemy.color, 2, 'darkgoldenrod');
             ctx.fillStyle = 'white';
             ctx.font = '16px sans-serif';
             ctx.textAlign = 'center';
@@ -314,207 +310,6 @@
             ctx.fillText(enemy.text, enemy.x, enemy.y);
             ctx.restore();
         }
-
-        function drawQuadrants() {
-            ctx.save();
-            ctx.globalAlpha = 0.2;
-            ctx.fillStyle = "orange";
-            const halfW = width / 2;
-            const halfH = height / 2;
-            if (showN) ctx.fillRect(0, 0, width, halfH);
-            if (showS) ctx.fillRect(0, halfH, width, halfH);
-            if (showW) ctx.fillRect(0, 0, halfW, height);
-            if (showE) ctx.fillRect(halfW, 0, halfW, height);
-            ctx.restore();
-        }
-
-        function draw8beat() {
-            if (!show8beat) return;
-
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = "orange";
-
-            Characters.slice(1).forEach((chara) => {
-                ctx.beginPath();
-                ctx.arc(chara.x, chara.y, 50, 0, 2 * Math.PI);
-                ctx.fill();
-            });
-
-            ctx.restore();
-        }
-
-        function drawDiscoInfernal() {
-            if (showDiscoInfernalMode === 0) return;
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            ctx.strokeStyle = "gray";
-            ctx.lineWidth = 2;
-
-            const capsuleRadius = 25;
-            const capsules = [[
-                { x1: 300, y1: 125, x2: 300, y2: 375 },
-                { x1: 200, y1: 375, x2: 200, y2: 125 },
-                { x1: 125, y1: 200, x2: 375, y2: 200 },
-                { x1: 375, y1: 300, x2: 125, y2: 300 },
-            ], [
-                { x1: 250, y1: 125, x2: 250, y2: 375 },
-                { x1: 375, y1: 250, x2: 125, y2: 250 },
-                { x1: 125, y1: 375, x2: 375, y2: 125 },
-            ], [
-                { x1: 175, y1: 225, x2: 325, y2: 225 },
-                { x1: 325, y1: 275, x2: 175, y2: 275 },
-                { x1: 225, y1: 325, x2: 225, y2: 175 },
-                { x1: 275, y1: 175, x2: 275, y2: 325 },
-                { x1: 125, y1: 125, x2: 375, y2: 125 },
-                { x1: 125, y1: 375, x2: 125, y2: 125 },
-                { x1: 375, y1: 125, x2: 375, y2: 375 },
-                { x1: 375, y1: 375, x2: 125, y2: 375 },
-            ], [
-                { x1: 325, y1: 225, x2: 275, y2: 225 },
-                { x1: 175, y1: 275, x2: 325, y2: 275 },
-                { x1: 225, y1: 175, x2: 225, y2: 325 },
-                { x1: 275, y1: 325, x2: 275, y2: 175 },
-                { x1: 375, y1: 125, x2: 125, y2: 125 },
-                { x1: 125, y1: 125, x2: 125, y2: 375 },
-                { x1: 375, y1: 375, x2: 375, y2: 125 },
-                { x1: 125, y1: 375, x2: 375, y2: 375 },
-            ]];
-
-            capsules[showDiscoInfernalMode-1].forEach((capsule) => {
-                ctx.beginPath();
-                ctx.arc(capsule.x1, capsule.y1, capsuleRadius, 0, 2 * Math.PI); // 左側の円
-                ctx.fillStyle = "blue";
-                ctx.fill();
-                //ctx.beginPath();
-                //ctx.arc(capsule.x2, capsule.y2, capsuleRadius, 0, 2 * Math.PI); // 右側の円
-                //ctx.fillStyle = "green";
-                //ctx.fill();
-
-            //    const dx = capsule.x2 - capsule.x1;
-            //    const dy = capsule.y2 - capsule.y1;
-            //    const angle = Math.atan2(dy, dx) + Math.PI / 2;
-            //    const offsetX = capsuleRadius * Math.cos(angle);
-            //    const offsetY = capsuleRadius * Math.sin(angle);
-            //    ctx.beginPath();
-            //    ctx.moveTo(capsule.x1 + offsetX, capsule.y1 + offsetY);
-            //    ctx.lineTo(capsule.x2 + offsetX, capsule.y2 + offsetY);
-            //    ctx.stroke();
-            //    ctx.beginPath();
-            //    ctx.moveTo(capsule.x1 - offsetX, capsule.y1 - offsetY);
-            //    ctx.lineTo(capsule.x2 - offsetX, capsule.y2 - offsetY);
-            //    ctx.stroke();
-            });
-            ctx.restore();
-        }
-
-        function drawFrogDancer() {
-            if (frogDancerMode === 0) return;
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = "orange";
-            const cellSize = 50;
-
-            const patterns = [
-                { x1: 0, y1: 0, x2: 5, y2: 0, w: 3, h: 8 },
-                { x1: 0, y1: 0, x2: 0, y2: 5, w: 8, h: 3 },
-                { x1: 2, y1: 0, x2: 3, y2: 0, w: 3, h: 8 },
-                { x1: 0, y1: 2, x2: 0, y2: 3, w: 8, h: 3 },
-            ];
-
-            const pattern = patterns[frogDancerMode-1];
-
-            ctx.fillRect(pattern.x1 * cellSize + 50, pattern.y1 * cellSize + 50, pattern.w * cellSize, pattern.h * cellSize);
-            ctx.fillRect(pattern.x2 * cellSize + 50, pattern.y2 * cellSize + 50, pattern.w * cellSize, pattern.h * cellSize);
-
-            ctx.restore();
-        }
-
-        function drawDeepCut() {
-            if (deepCutMode === 0) return;
-
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = "red";
-
-            const enemy = Characters[0];
-            const radius = 400;
-            const angleWidth = Math.PI / 4;
-
-            const players = Characters.slice(1);
-            const targets = [];
-
-            if (deepCutMode === 1) {
-                targets.push(players[0], players[1]);
-            } else if (deepCutMode === 2) {
-                targets.push(players[0], players[1], players[2], players[3]);
-            } else if (deepCutMode === 3) {
-                targets.push(players[4], players[5], players[6], players[7]);
-            } else if (deepCutMode === 4) {
-                targets.push(...players);
-            }
-
-            targets.forEach((player) => {
-                const dx = player.x - enemy.x;
-                const dy = player.y - enemy.y;
-                const angle = Math.atan2(dy, dx);
-
-                ctx.beginPath();
-                ctx.moveTo(enemy.x, enemy.y);
-                ctx.arc(enemy.x, enemy.y, radius, angle - angleWidth / 2, angle + angleWidth / 2);
-                ctx.closePath();
-                ctx.fill();
-            });
-            ctx.restore();
-        }
-
-        function drawCircleRing() {
-            if (inOutMode === 0) return;
-
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            if (inOutMode === 1) {
-                ctx.fillStyle = "olive";
-                ctx.beginPath();
-                ctx.arc(center.x, center.y, 70, 0, 2 * Math.PI);
-                ctx.fill();
-            } else if (inOutMode === 2) {
-                ctx.strokeStyle = "olive";
-                ctx.lineWidth = 400;
-                ctx.beginPath();
-                ctx.arc(center.x, center.y, 50+200, 0, 2 * Math.PI);
-                ctx.stroke();
-            }
-            ctx.restore();
-        }
-
-        function drawArcadionNightFever() {
-            if (arcadionNightFeverMode === 0) return;
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = "red";
-            const enemy = Characters[0];
-            const radius = 400;
-            const angleWidth = Math.PI / 4;
-            const player = Characters[arcadionNightFeverMode];
-            const dx = player.x - enemy.x;
-            const dy = player.y - enemy.y;
-            let angle = Math.atan2(dy, dx);
-            ctx.beginPath();
-            ctx.moveTo(enemy.x, enemy.y);
-            ctx.arc(enemy.x, enemy.y, radius, angle - angleWidth / 2, angle + angleWidth / 2);
-            ctx.closePath();
-            ctx.fill();
-            angle = (Math.PI / 4) * (arcadionNightFeverMode+6);
-            ctx.beginPath();
-            ctx.moveTo(enemy.x, enemy.y);
-            ctx.arc(enemy.x, enemy.y, radius, angle - angleWidth / 2, angle + angleWidth / 2);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.restore();
-        }
-
 
         function toggleN() {
             showN = !showN;
@@ -536,24 +331,180 @@
             drawImage();
         }
 
-        function toggle8beat() {
-            show8beat = !show8beat;
+        function drawQuadrants() {
+            const halfW = width / 2;
+            const halfH = height / 2;
+            if (showE) drawRectFromAngle({ x: halfW, y: halfH }, Math.PI * 0 / 2, width, halfH, 'orange', 0.2);
+            if (showS) drawRectFromAngle({ x: halfW, y: halfH }, Math.PI * 1 / 2, width, halfH, 'orange', 0.2);
+            if (showW) drawRectFromAngle({ x: halfW, y: halfH }, Math.PI * 2 / 2, width, halfH, 'orange', 0.2);
+            if (showN) drawRectFromAngle({ x: halfW, y: halfH }, Math.PI * 3 / 2, width, halfH, 'orange', 0.2);
+        }
+
+        function toggleBeat() {
+            showBeatMode++;
             drawImage();
         }
 
-        function toggleDiscoInfernal() {
-            showDiscoInfernalMode = (showDiscoInfernalMode + 1) % 5;
+        function drawBeat() {
+            showBeatMode %= 4;
+            if (showBeatMode === 0) return;
+            if (showBeatMode === 1) [0, 1, 2, 3, 4, 5, 6, 7].forEach((t) => { drawCircle(Players[t], 50, 'orange', 0.5); });
+            if (showBeatMode === 2) [0, 1, 2, 3].forEach((t) => { drawCircle(Players[t], 40, 'orange', 0.5); });
+            if (showBeatMode === 3) [4, 5, 6, 7].forEach((t) => { drawCircle(Players[t], 40, 'orange', 0.5); });
+        }
+
+        function toggleDiscoInfernal1() {
+            showDiscoInfernal1Mode++;
             drawImage();
         }
+
+        function drawDiscoInfernal1() {
+            showDiscoInfernal1Mode %= 3;
+            if (showDiscoInfernal1Mode === 0) return;
+
+            const patterns = [[
+                { x: 175, y: 225},
+                { x: 325, y: 275},
+                { x: 225, y: 325},
+                { x: 275, y: 175},
+                { x: 125, y: 125},
+                { x: 125, y: 375},
+                { x: 375, y: 125},
+                { x: 375, y: 375},
+            ], [
+                { x: 325, y: 225},
+                { x: 175, y: 275},
+                { x: 225, y: 175},
+                { x: 275, y: 325},
+                { x: 375, y: 125},
+                { x: 125, y: 125},
+                { x: 375, y: 375},
+                { x: 125, y: 375},
+            ]];
+
+            patterns[showDiscoInfernal1Mode - 1].forEach((pattern) => { drawCircle(pattern, 25, 'blue', 0.5); });
+        }
+
+        function toggleDiscoInfernal2() {
+            showDiscoInfernal2Mode++;
+            drawImage();
+        }
+
+        function drawDiscoInfernal2() {
+            showDiscoInfernal2Mode %= 3;
+            if (showDiscoInfernal2Mode === 0) return;
+
+            const patterns = [[
+                { x: 100, y: 250 },
+                { x: 250, y: 100 },
+                { x: 250, y: 400 },
+                { x: 400, y: 250 },
+            ], [
+                { x: 100, y: 100 },
+                { x: 400, y: 100 },
+                { x: 400, y: 400 },
+                { x: 100, y: 400 },
+            ]];
+
+            patterns[showDiscoInfernal2Mode - 1].forEach((pattern) => { drawCircle(pattern, 25, 'blue', 0.5); });
+
+            const patterns2 = [[
+                { x: 200, y: 200 },
+                { x: 200, y: 300 },
+                { x: 300, y: 200 },
+                { x: 300, y: 300 },
+            ], [
+                { x: 250, y: 180 },
+                { x: 180, y: 250 },
+                { x: 320, y: 250 },
+                { x: 250, y: 320 },
+            ]];
+
+            patterns2[showDiscoInfernal2Mode - 1].forEach((pattern) => { drawFanFromAtoB(pattern, getClosestPlayers(pattern)[0], 400, Math.PI / 4, 'gray', 0.5); });
+        }
+
 
         function toggleFrogDancer() {
-            frogDancerMode = (frogDancerMode + 1) % 5;
+            frogDancerMode++;
             drawImage();
+        }
+
+        function drawFrogDancer() {
+            frogDancerMode = frogDancerMode % 7;
+            if (frogDancerMode === 0) return;
+
+            const patterns = [
+                [
+                    { x: 50 * 5, y: 50 * 4, angle: Math.PI * 1 / 2 },
+                    { x: 50 * 5, y: 50 * 6, angle: Math.PI * 3 / 2 },
+                ], [
+                    { x: 50 * 4, y: 50 * 5, angle: Math.PI * 4 / 2 },
+                    { x: 50 * 6, y: 50 * 5, angle: Math.PI * 2 / 2 },
+                ], [
+                    { x: 50 * 5, y: 50 * 4, angle: Math.PI * 3 / 2 },
+                    { x: 50 * 5, y: 50 * 6, angle: Math.PI * 1 / 2 },
+                ], [
+                    { x: 50 * 4, y: 50 * 5, angle: Math.PI * 2 / 2 },
+                    { x: 50 * 6, y: 50 * 5, angle: Math.PI * 4 / 2 },
+                ], [
+                    { x: 50 * 4, y: 50 * 5, angle: Math.PI * 4 / 2 },
+                    { x: 50 * 6, y: 50 * 5, angle: Math.PI * 2 / 2 },
+                    { x: 50 * 5, y: 50 * 4, angle: Math.PI * 3 / 2 },
+                    { x: 50 * 5, y: 50 * 6, angle: Math.PI * 1 / 2 },
+                ], [
+                    { x: 50 * 5, y: 50 * 4, angle: Math.PI * 1 / 2 },
+                    { x: 50 * 5, y: 50 * 6, angle: Math.PI * 3 / 2 },
+                    { x: 50 * 4, y: 50 * 5, angle: Math.PI * 2 / 2 },
+                    { x: 50 * 6, y: 50 * 5, angle: Math.PI * 4 / 2 },
+                ]
+            ];
+
+            patterns[frogDancerMode - 1].forEach((p) => { drawRectFromAngle(p, p.angle, 400, 150, 'orange', 0.5); });
         }
 
         function toggleDeepCut() {
-            deepCutMode = (deepCutMode + 1) % 4;
+            deepCutMode++;
             drawImage();
+        }
+
+        function drawDeepCut() {
+            deepCutMode = deepCutMode % 5;
+            if (deepCutMode === 0) return;
+
+            const patterns = [
+                [0, 1],
+                [0, 1, 2, 3],
+                [4, 5, 6, 7],
+                [0, 1, 2, 3, 4, 5, 6, 7]
+            ];
+            patterns[deepCutMode - 1].forEach((p) => { drawFanFromAtoB(Enemys[0], Players[p], 400, Math.PI / 4, 'red', 0.5); });
+        }
+
+        function toggleCircleRing() {
+            inOutMode = (inOutMode + 1) % 3;
+            drawImage();
+        }
+
+        function drawCircleRing() {
+            if (inOutMode === 0) return;
+
+            if (inOutMode === 1) {
+                drawCircle(center, 70, 'olive', 0.5);
+            } else if (inOutMode === 2) {
+                drawRing(center, 50, 400, 'olive', 0.5);
+            }
+        }
+
+        function toggleArcadionNightFever() {
+            arcadionNightFeverMode = (arcadionNightFeverMode + 1) % 9;
+            drawImage();
+        }
+
+        function drawArcadionNightFever() {
+            if (arcadionNightFeverMode === 0) return;
+            const targets = [0, 4, 1, 5, 2, 6, 3, 7, 0];
+            drawFanFromAtoB(Enemys[0], Players[targets[arcadionNightFeverMode-1]], 400, Math.PI / 4, 'red', 0.5);
+            drawFanFromAtoB(Enemys[0], Players[targets[arcadionNightFeverMode]], 400, Math.PI / 4, 'red', 0.5);
         }
 
         function toggleDancingField() {
@@ -571,16 +522,6 @@
                 }
             }
 
-            drawImage();
-        }
-
-        function toggleCircleRing() {
-            inOutMode = (inOutMode + 1) % 3;
-            drawImage();
-        }
-
-        function toggleArcadionNightFever() {
-            arcadionNightFeverMode = (arcadionNightFeverMode + 1) % 9;
             drawImage();
         }
 
@@ -604,7 +545,8 @@
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            for (const chara of Characters) {
+            let characters = Players.concat(Enemys);
+            for (const chara of characters) {
                 if (!chara.visible) continue;
                 const dx = x - chara.x;
                 const dy = y - chara.y;
@@ -639,12 +581,12 @@
             drawImage();
         }
         function toggleEnemyChara() {
-            Characters[0].visible = !Characters[0].visible;
+            Enemys[0].visible = !Enemys[0].visible;
             drawImage();
         }
 
         function togglePlayerChara() {
-            Characters.slice(1).forEach((chara) => {chara.visible = !chara.visible;});
+            Players.forEach((chara) => {chara.visible = !chara.visible;});
             drawImage();
         }
 
@@ -654,10 +596,98 @@
         }
 
         function toggleCharaLock() {
-            for (let i = 0; i < Characters.length; i++) {
-                Characters[i].dragging = !Characters[i].dragging;
+            for (let i = 0; i < Players.length; i++) {
+                Players[i].dragging = !Players[i].dragging;
             }
             drawImage();
+        }
+
+        function drawCircle(from, radius, color, alpha = 1) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(from.x, from.y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawCircleStroke(from, radius, color, lineWidth, lineColor) {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(from.x, from.y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawRing(from, innerRadius, outerRadius, color, alpha = 1) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(from.x, from.y, outerRadius, 0, 2 * Math.PI);
+            ctx.arc(from.x, from.y, innerRadius, 0, 2 * Math.PI, true);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawFanFromAtoB(from, to, radius, widthAngle, color, alpha = 1) {
+            drawFanFromAngle(from, Math.atan2(to.y - from.y, to.x - from.x), radius, widthAngle, color, alpha);
+        }
+
+        function drawFanFromAngle(from, angle, radius, widthAngle, color, alpha = 1) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.arc(from.x, from.y, radius, angle - widthAngle / 2, angle + widthAngle / 2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawRectFromAtoB(from, to, width, length, color, alpha = 1) {
+            drawRectFromAngle(from, Math.atan2(to.y - from.y, to.x - from.x), width, length, color, alpha);
+        }
+
+        function drawRectFromAngle(from, angle, width, length, color, alpha = 1) {
+            const halfWidth = width / 2;
+            const dx = Math.cos(angle) * length;
+            const dy = Math.sin(angle) * length;
+            const p1 = { x: from.x - Math.sin(angle) * halfWidth, y: from.y + Math.cos(angle) * halfWidth };
+            const p2 = { x: from.x + Math.sin(angle) * halfWidth, y: from.y - Math.cos(angle) * halfWidth };
+            const p3 = { x: p2.x + dx, y: p2.y + dy };
+            const p4 = { x: p1.x + dx, y: p1.y + dy };
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function getClosestPlayers(pos) {
+            return Players
+                .map(player => {
+                    const dx = player.x - pos.x;
+                    const dy = player.y - pos.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    return { player, distance };
+                })
+                .sort((a, b) => a.distance - b.distance) // 距離でソート
+                .map(entry => entry.player); // プレイヤーオブジェクトのみを返す
         }
 
         function saveImage() {
@@ -668,8 +698,6 @@
         }
 
 
-        resetAoE();
-        resetChara();
     </script>
 
 </body>
