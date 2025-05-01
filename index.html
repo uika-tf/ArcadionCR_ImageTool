@@ -117,6 +117,11 @@
                         <button onclick="toggleArcadionNightFever()">アルカディアナイトフィーバー</button>
                     </div>
                     <div class="controls" style="display:none;">
+                        <button onclick="toggleCR2ColorRiot()">カラーライオット</button>
+                        <button onclick="toggleCR2DoubleGraffitiNS()">ダブルグラフィティ北南</button>
+                        <button onclick="toggleCR2DoubleGraffitiEW()">ダブルグラフィティ東西</button>
+                        <button onclick="toggleCR2Saboten()">サボテン</button>
+                        <button onclick="toggleCR2Ryusa()">流砂</button>
                     </div>
                     <div class="controls" style="display:none;">
                     </div>
@@ -130,6 +135,7 @@
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        let raf;
 
         const tabs = document.querySelectorAll('.tab-menu li');
         const contents = document.querySelectorAll('.tab-content div');
@@ -184,6 +190,12 @@
         let arcadionNightFeverMode = 0;
         let cr1DancingWaveMode = 0;
         let cr1DoTheHustle = 0;
+        let animTime = 0;
+        let cr2ColorRiotMode = 0;
+        let cr2DoubleGraffitiNSMode = 0;
+        let cr2DoubleGraffitiEWMode = 0;
+        let cr2SabotenMode = 0;
+        let cr2RyusaMode = 0;
 
         resetAoE();
         resetChara();
@@ -199,6 +211,11 @@
             arcadionNightFeverMode = 0;
             cr1DancingWaveMode = 0;
             cr1DoTheHustle = 0;
+            cr2ColorRiotMode = 0;
+            cr2DoubleGraffitiNSMode = 0;
+            cr2DoubleGraffitiEWMode = 0;
+            cr2SabotenMode = 0;
+            cr2RyusaMode = 0;
 
             segments.length = 0;
             for (let y = 0; y < 8; y++) {
@@ -244,6 +261,9 @@
             drawArcadionNightFever();
             drawCR1DancingWave();
             drawCR1DoTheHustle();
+            drawCR2ColorRiot();
+            drawCR2DoubleGraffiti();
+            drawCR2Saboten();
 
 
             drawEnemy();
@@ -543,6 +563,190 @@
             drawImage();
         }
 
+        function toggleDancingFieldAnim() {
+            resetAoE();
+            animTime = 0;
+            raf = window.requestAnimationFrame(drawDancingFieldAnim);
+
+        }
+
+        function drawDancingFieldAnim(timestamp) {
+            if (animTime === 0) animTime = timestamp;
+            const frame = timestamp - animTime;
+
+            for (let y = 0; y < 8; y++) {
+                for (let x = 0; x < 8; x++) {
+                    if ((frame % 7000) < 1500) {
+                        segments[y][x] = (x + y) % 2;
+                    } else if ((frame % 7000) < 2500) {
+                        segments[y][x] = ((x + y) % 2) * 2;
+                    } else if ((frame % 7000) < 3500) {
+                        segments[y][x] = 0;
+
+                    } else if ((frame % 7000) < 5000) {
+                        segments[y][x] = (x + y + 1) % 2;
+                    } else if ((frame % 7000) < 6000) {
+                        segments[y][x] = ((x + y + 1) % 2) * 2;
+                    } else if ((frame % 7000) < 7000) {
+                        segments[y][x] = 0;
+                    }
+                }
+            }
+
+            if (frame < 8500) {
+                inOutMode = 0;
+            } else if (frame < 9500) {
+                inOutMode = 1;
+            } else if (frame < 10500) {
+                inOutMode = 0;
+            } else if (frame < 11500) {
+                inOutMode = 2;
+            } else {
+                inOutMode = 0;
+            }
+
+            const patterns = [
+                { x: 175, y: 225 },
+                { x: 325, y: 275 },
+                { x: 225, y: 325 },
+                { x: 275, y: 175 },
+                { x: 125, y: 125 },
+                { x: 125, y: 375 },
+                { x: 375, y: 125 },
+                { x: 375, y: 375 },
+            ]
+
+
+            drawImage();
+            patterns.forEach((pattern) => { drawCircle(pattern, 25, 'blue', 0.5); });
+
+            if (frame < 30000) {
+                raf = window.requestAnimationFrame(drawDancingFieldAnim);
+            }
+        }
+
+        function toggleCR2ColorRiot() {
+            cr2ColorRiotMode++;
+            drawImage();
+        }
+
+        function drawCR2ColorRiot() {
+            cr2ColorRiotMode = cr2ColorRiotMode % 3;
+            if (cr2ColorRiotMode === 0) return;
+            const p = getClosestPlayers(center)
+            drawCircle(p[0], 50, cr2ColorRiotMode>1?"red":"blue", 0.5);
+            drawCircle(p[7], 50, cr2ColorRiotMode>1?"blue":"red", 0.5);
+        }
+
+        function toggleCR2DoubleGraffitiNS() {
+            cr2DoubleGraffitiNSMode++;
+            drawImage();
+        }
+
+        function toggleCR2DoubleGraffitiEW() {
+            cr2DoubleGraffitiEWMode++;
+            drawImage();
+        }
+
+        function drawCR2DoubleGraffiti() {
+            cr2DoubleGraffitiNSMode = cr2DoubleGraffitiNSMode % 5;
+            cr2DoubleGraffitiEWMode = cr2DoubleGraffitiEWMode % 7;
+
+            if (cr2DoubleGraffitiNSMode === 1) drawFanFromAtoB({ x: 250, y: 50 }, center, 500, Math.PI / 1.9, 'orange', 0.2);
+            if (cr2DoubleGraffitiNSMode === 2) drawFanFromAtoB({ x: 250, y: 450 }, center, 500, Math.PI / 1.9, 'orange', 0.2);
+            if (cr2DoubleGraffitiNSMode === 3) drawCircle({ x: 250, y: 50 }, 300, 'orange', 0.2);
+            if (cr2DoubleGraffitiNSMode === 4) drawCircle({ x: 250, y: 450 }, 300, 'orange', 0.2);
+
+            if (cr2DoubleGraffitiEWMode === 1) drawFanFromAtoB({ x: 50, y: 250 }, center, 500, Math.PI / 1.9, 'orange', 0.2);
+            if (cr2DoubleGraffitiEWMode === 2) drawFanFromAtoB({ x: 450, y: 250 }, center, 500, Math.PI / 1.9, 'orange', 0.2);
+            if (cr2DoubleGraffitiEWMode === 3) drawCircle({ x: 50, y: 250 }, 300, 'orange', 0.2);
+            if (cr2DoubleGraffitiEWMode === 4) drawCircle({ x: 450, y: 250 }, 300, 'orange', 0.2);
+
+            if (cr2DoubleGraffitiEWMode === 5) {
+                drawCircle({ x: 330, y: 80 }, 150, 'orange', 0.2);
+                drawCircle({ x: 330, y: 250 }, 150, 'orange', 0.2);
+                drawCircle({ x: 330, y: 420 }, 150, 'orange', 0.2);
+            }
+            if (cr2DoubleGraffitiEWMode === 6) {
+                drawCircle({ x: 170, y: 80 }, 150, 'orange', 0.2);
+                drawCircle({ x: 170, y: 250 }, 150, 'orange', 0.2);
+                drawCircle({ x: 170, y: 420 }, 150, 'orange', 0.2);
+            }
+        }
+
+        function toggleCR2Saboten() {
+            cr2SabotenMode++;
+            drawImage();
+        }
+
+        function toggleCR2Ryusa() {
+            cr2RyusaMode++;
+            drawImage();
+        }
+
+        function drawCR2Saboten() {
+            cr2SabotenMode = cr2SabotenMode % 12;
+            cr2RyusaMode = cr2RyusaMode % 3;
+
+            const pos = [
+                [{ x: 90, y:  90 }, { x: 140, y:  90 }, { x: 250, y:  90 }, { x: 360, y:  90 }, { x: 410, y:  90 }],
+                [{ x: 90, y: 170 }, { x: 170, y: 170 }, { x: 250, y: 150 }, { x: 330, y: 170 }, { x: 410, y: 170 }],
+                [{ x: 90, y: 250 }, { x: 150, y: 250 }, { x: 250, y: 250 }, { x: 350, y: 250 }, { x: 410, y: 250 }],
+                [{ x: 90, y: 330 }, { x: 170, y: 330 }, { x: 250, y: 350 }, { x: 330, y: 330 }, { x: 410, y: 330 }],
+                [{ x: 90, y: 410 }, { x: 140, y: 410 }, { x: 250, y: 410 }, { x: 360, y: 410 }, { x: 410, y: 410 }],
+            ];
+ 
+            if (cr2SabotenMode > 0) {
+                const patterns = [
+                    [pos[3][0], pos[2][1], pos[0][3], pos[4][3], pos[1][4]],
+                    [pos[1][0], pos[4][0], pos[2][2], pos[3][2], pos[0][4]],
+                    [pos[3][1], pos[0][2], pos[1][2], pos[2][4], pos[4][4]],
+                    [pos[0][0], pos[2][0], pos[4][1], pos[1][3], pos[3][3]],
+                    [pos[0][1], pos[1][1], pos[4][2], pos[2][3], pos[3][4]],
+                    [pos[4][0], pos[0][1], pos[2][2], pos[1][3], pos[3][3]],
+                    [pos[0][0], pos[1][2], pos[3][3], pos[2][4], pos[4][4]],
+                    [pos[1][1], pos[4][2], pos[0][3], pos[1][4], pos[3][4]],
+                    [pos[4][0], pos[3][1], pos[1][2], pos[2][3], pos[0][4]],
+                    [pos[1][0], pos[2][0], pos[3][0], pos[0][2], pos[4][3]],
+                    [pos[4][0], pos[0][1], pos[1][3], pos[3][3], pos[2][4]],
+                ];
+
+                patterns[cr2SabotenMode - 1].forEach((pattern) => {
+                    drawCircle(pattern, 100, 'orange', 0.3  );
+                    drawCircle(pattern, 15, 'green', 0.2);
+                });
+            }
+
+            if (cr2RyusaMode === 1) {
+                const ryusaPattern = [
+                    [pos[1][0], pos[4][0], pos[2][1], pos[4][1], pos[1][2], pos[3][2], pos[0][3], pos[2][3], pos[1][4], pos[3][4]],
+                ];
+
+                drawCircle(center, 225, 'brown', 0.2);
+
+
+                ryusaPattern[cr2RyusaMode - 1].forEach((pattern) => {
+                    drawCircle(pattern, 100, 'orange', 0.3);
+                    drawCircle(pattern, 15, 'green', 0.2);
+                });
+            }
+
+            if (cr2RyusaMode === 2) {
+                drawCircle({ x: 60, y: 250 }, 225, 'brown', 0.2);
+
+                Players.forEach((p) => {
+                    drawCircle(p, 150, 'orange', 0.2);
+                });
+
+            }
+
+            if (cr2SabotenMode > 0 || cr2RyusaMode === 1) {
+                pos.forEach((pattern) => {
+                    pattern.forEach((p) => { drawCircle(p, 5, 'green', 0.2); });
+                });
+            }
+        }
+
         canvas.addEventListener("click", (event) => {
             if (currentTab === "キャラ") return;
             const rect = canvas.getBoundingClientRect();
@@ -618,6 +822,10 @@
                 Players[i].dragging = !Players[i].dragging;
             }
             drawImage();
+        }
+
+        function toDScale(c) {
+            return c * 5 + center.x;
         }
 
         function drawCircle(from, radius, color, alpha = 1) {
