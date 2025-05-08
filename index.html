@@ -796,7 +796,7 @@
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
 
-            if (cr2SabotenToolMode === 1) {
+            if (cr2SabotenMode > 0 || cr2RyusaMode === 1 || cr2SabotenToolMode > 0) {
                 SabotenPos.forEach((row) => {
                     row.forEach((pos) => {
                         const dx = x - pos.x;
