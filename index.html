@@ -120,7 +120,8 @@
                         <button onclick="toggleCR2ColorRiot()">カラーライオット</button>
                         <button onclick="toggleCR2DoubleGraffitiNS()">ダブルグラフィティ北南</button>
                         <button onclick="toggleCR2DoubleGraffitiEW()">ダブルグラフィティ東西</button>
-                        <button onclick="toggleCR2Saboten()">サボテン</button>
+                        <button onclick="toggleCR2SabotenTool()">サボテンツール</button>
+                        <button onclick="toggleCR2Saboten()">サボテンパターン</button>
                         <button onclick="toggleCR2Ryusa()">流砂</button>
                     </div>
                     <div class="controls" style="display:none;">
@@ -166,6 +167,15 @@
             { x: 0, y: 0, radius: 15, text: '４', color: 'red', dragging: false, visible: true }
         ];
 
+        let SabotenPos = [
+            [{ active: false, x: 90, y:  90 }, { active: false, x: 140, y:  90 }, { active: false, x: 250, y:  90 }, { active: false, x: 360, y:  90 }, { active: false, x: 410, y:  90 }],
+            [{ active: false, x: 90, y: 170 }, { active: false, x: 170, y: 170 }, { active: false, x: 250, y: 150 }, { active: false, x: 330, y: 170 }, { active: false, x: 410, y: 170 }],
+            [{ active: false, x: 90, y: 250 }, { active: false, x: 150, y: 250 }, { active: false, x: 250, y: 250 }, { active: false, x: 350, y: 250 }, { active: false, x: 410, y: 250 }],
+            [{ active: false, x: 90, y: 330 }, { active: false, x: 170, y: 330 }, { active: false, x: 250, y: 350 }, { active: false, x: 330, y: 330 }, { active: false, x: 410, y: 330 }],
+            [{ active: false, x: 90, y: 410 }, { active: false, x: 140, y: 410 }, { active: false, x: 250, y: 410 }, { active: false, x: 360, y: 410 }, { active: false, x: 410, y: 410 }],
+        ];
+
+
         const width = canvas.width;
         const height = canvas.height;
 
@@ -196,6 +206,7 @@
         let cr2DoubleGraffitiEWMode = 0;
         let cr2SabotenMode = 0;
         let cr2RyusaMode = 0;
+        let cr2SabotenToolMode = 0;
 
         resetAoE();
         resetChara();
@@ -221,6 +232,12 @@
             for (let y = 0; y < 8; y++) {
                 segments.push(new Array(8).fill(0));
             }
+
+            SabotenPos.forEach((row) => {
+                row.forEach((pos) => {
+                    pos.active = false;
+                });
+            });
 
             drawImage();
         }
@@ -676,59 +693,77 @@
 
         function toggleCR2Saboten() {
             cr2SabotenMode++;
+            cr2SabotenMode = cr2SabotenMode % 12;
+
+            SabotenPos.forEach((row) => {
+                row.forEach((pos) => {
+                    pos.active = false;
+                });
+            });
+
+            if (cr2SabotenMode > 0) {
+                const patterns = [
+                    [{ y: 3, x: 0 }, { y: 2, x: 1 }, { y: 0, x: 3 }, { y: 4, x: 3 }, { y: 1, x: 4 }],
+                    [{ y: 1, x: 0 }, { y: 4, x: 0 }, { y: 2, x: 2 }, { y: 3, x: 2 }, { y: 0, x: 4 }],
+                    [{ y: 3, x: 1 }, { y: 0, x: 2 }, { y: 1, x: 2 }, { y: 2, x: 4 }, { y: 4, x: 4 }],
+                    [{ y: 0, x: 0 }, { y: 2, x: 0 }, { y: 4, x: 1 }, { y: 1, x: 3 }, { y: 3, x: 3 }],
+                    [{ y: 0, x: 1 }, { y: 1, x: 1 }, { y: 4, x: 2 }, { y: 2, x: 3 }, { y: 3, x: 4 }],
+                    [{ y: 4, x: 0 }, { y: 0, x: 1 }, { y: 2, x: 2 }, { y: 1, x: 3 }, { y: 3, x: 3 }],
+                    [{ y: 0, x: 0 }, { y: 1, x: 2 }, { y: 3, x: 3 }, { y: 2, x: 4 }, { y: 4, x: 4 }],
+                    [{ y: 1, x: 1 }, { y: 4, x: 2 }, { y: 0, x: 3 }, { y: 1, x: 4 }, { y: 3, x: 4 }],
+                    [{ y: 4, x: 0 }, { y: 3, x: 1 }, { y: 1, x: 2 }, { y: 2, x: 3 }, { y: 0, x: 4 }],
+                    [{ y: 1, x: 0 }, { y: 2, x: 0 }, { y: 3, x: 0 }, { y: 0, x: 2 }, { y: 4, x: 3 }],
+                    [{ y: 4, x: 0 }, { y: 0, x: 1 }, { y: 1, x: 3 }, { y: 3, x: 3 }, { y: 2, x: 4 }],
+                ];
+
+                patterns[cr2SabotenMode - 1].forEach((pattern) => {
+                    SabotenPos[pattern.y][pattern.x].active = true;
+                });
+            }
+
             drawImage();
         }
 
         function toggleCR2Ryusa() {
             cr2RyusaMode++;
+            cr2RyusaMode = cr2RyusaMode % 3;
+
+            SabotenPos.forEach((row) => {
+                row.forEach((pos) => {
+                    pos.active = false;
+                });
+            });
+
+
+            if (cr2RyusaMode === 1) {
+                const ryusaPattern = [
+                    [{ y: 1, x: 0 }, { y: 4, x: 0 }, { y: 2, x: 1 }, { y: 4, x: 1 }, { y: 1, x: 2 }, { y: 3, x: 2 }, { y: 0, x: 3 }, { y: 2, x: 3 }, { y: 1, x: 4 }, { y: 3, x: 4 }],
+                ];
+
+                ryusaPattern[cr2RyusaMode - 1].forEach((pattern) => {
+                    SabotenPos[pattern.y][pattern.x].active = true;
+                });
+            }
+
+            drawImage();
+        }
+
+        function toggleCR2SabotenTool() {
+            cr2SabotenToolMode++;
+            cr2SabotenToolMode = cr2SabotenToolMode % 2;
+
+            SabotenPos.forEach((row) => {
+                row.forEach((pos) => {
+                    pos.active = false;
+                });
+            });
+
             drawImage();
         }
 
         function drawCR2Saboten() {
-            cr2SabotenMode = cr2SabotenMode % 12;
-            cr2RyusaMode = cr2RyusaMode % 3;
-
-            const pos = [
-                [{ x: 90, y:  90 }, { x: 140, y:  90 }, { x: 250, y:  90 }, { x: 360, y:  90 }, { x: 410, y:  90 }],
-                [{ x: 90, y: 170 }, { x: 170, y: 170 }, { x: 250, y: 150 }, { x: 330, y: 170 }, { x: 410, y: 170 }],
-                [{ x: 90, y: 250 }, { x: 150, y: 250 }, { x: 250, y: 250 }, { x: 350, y: 250 }, { x: 410, y: 250 }],
-                [{ x: 90, y: 330 }, { x: 170, y: 330 }, { x: 250, y: 350 }, { x: 330, y: 330 }, { x: 410, y: 330 }],
-                [{ x: 90, y: 410 }, { x: 140, y: 410 }, { x: 250, y: 410 }, { x: 360, y: 410 }, { x: 410, y: 410 }],
-            ];
- 
-            if (cr2SabotenMode > 0) {
-                const patterns = [
-                    [pos[3][0], pos[2][1], pos[0][3], pos[4][3], pos[1][4]],
-                    [pos[1][0], pos[4][0], pos[2][2], pos[3][2], pos[0][4]],
-                    [pos[3][1], pos[0][2], pos[1][2], pos[2][4], pos[4][4]],
-                    [pos[0][0], pos[2][0], pos[4][1], pos[1][3], pos[3][3]],
-                    [pos[0][1], pos[1][1], pos[4][2], pos[2][3], pos[3][4]],
-                    [pos[4][0], pos[0][1], pos[2][2], pos[1][3], pos[3][3]],
-                    [pos[0][0], pos[1][2], pos[3][3], pos[2][4], pos[4][4]],
-                    [pos[1][1], pos[4][2], pos[0][3], pos[1][4], pos[3][4]],
-                    [pos[4][0], pos[3][1], pos[1][2], pos[2][3], pos[0][4]],
-                    [pos[1][0], pos[2][0], pos[3][0], pos[0][2], pos[4][3]],
-                    [pos[4][0], pos[0][1], pos[1][3], pos[3][3], pos[2][4]],
-                ];
-
-                patterns[cr2SabotenMode - 1].forEach((pattern) => {
-                    drawCircle(pattern, 100, 'orange', 0.3  );
-                    drawCircle(pattern, 15, 'green', 0.2);
-                });
-            }
-
             if (cr2RyusaMode === 1) {
-                const ryusaPattern = [
-                    [pos[1][0], pos[4][0], pos[2][1], pos[4][1], pos[1][2], pos[3][2], pos[0][3], pos[2][3], pos[1][4], pos[3][4]],
-                ];
-
                 drawCircle(center, 225, 'brown', 0.2);
-
-
-                ryusaPattern[cr2RyusaMode - 1].forEach((pattern) => {
-                    drawCircle(pattern, 100, 'orange', 0.3);
-                    drawCircle(pattern, 15, 'green', 0.2);
-                });
             }
 
             if (cr2RyusaMode === 2) {
@@ -740,18 +775,44 @@
 
             }
 
-            if (cr2SabotenMode > 0 || cr2RyusaMode === 1) {
-                pos.forEach((pattern) => {
-                    pattern.forEach((p) => { drawCircle(p, 5, 'green', 0.2); });
+            if (cr2SabotenMode > 0 || cr2RyusaMode === 1 || cr2SabotenToolMode > 0) {
+                SabotenPos.forEach((row) => {
+                    row.forEach((pos) => {
+                        if (pos.active) {
+                            drawCircle(pos, 100, 'orange', 0.3);
+                            drawCircle(pos, 10, 'green', 0.2);
+                        } else {
+                            drawCircle(pos, 5, 'green', 0.2);
+                        }
+                    });
                 });
             }
         }
 
         canvas.addEventListener("click", (event) => {
             if (currentTab === "キャラ") return;
+
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
+
+            if (cr2SabotenToolMode === 1) {
+                SabotenPos.forEach((row) => {
+                    row.forEach((pos) => {
+                        const dx = x - pos.x;
+                        const dy = y - pos.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        // サボテンのクリック判定 (半径10以内)
+                        if (distance <= 20) {
+                            pos.active = !pos.active; // active状態を切り替え
+                            drawImage(); // 再描画
+                        }
+                    });
+                });
+                return; // サボテンツールモードの場合は他の処理をスキップ
+            }
+
             const segmentSize = 400 / 8;
             const gridX = Math.floor((x - 50) / segmentSize);
             const gridY = Math.floor((y - 50) / segmentSize);
