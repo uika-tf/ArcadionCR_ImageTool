@@ -125,6 +125,7 @@
                         <button onclick="toggleCR2Ryusa()">流砂</button>
                     </div>
                     <div class="controls" style="display:none;">
+                        <button onclick="toggleCR3BlowSeed()">ブロウシード</button>
                     </div>
                     <div class="controls" style="display:none;">
                     </div>
@@ -207,6 +208,7 @@
         let cr2SabotenMode = 0;
         let cr2RyusaMode = 0;
         let cr2SabotenToolMode = 0;
+        let cr3BlowSeedMode = 0;
 
         resetAoE();
         resetChara();
@@ -227,6 +229,7 @@
             cr2DoubleGraffitiEWMode = 0;
             cr2SabotenMode = 0;
             cr2RyusaMode = 0;
+            cr3BlowSeedMode = 0;
 
             segments.length = 0;
             for (let y = 0; y < 8; y++) {
@@ -281,6 +284,7 @@
             drawCR2ColorRiot();
             drawCR2DoubleGraffiti();
             drawCR2Saboten();
+            drawCR3BlowSeed();
 
 
             drawEnemy();
@@ -310,7 +314,12 @@
                     break;
                 case 2:
                     ctx.fillStyle = colors[0];
-                    ctx.fillRect(150, 50, 200, 400);
+                    ctx.fillRect(125, 0, 250, 500);
+                    ctx.fillStyle = 'yellow';
+                    ctx.fillRect(150 - (100 / 16), 100 - (100 / 16), 200 + (100 / 16) * 2, (100 / 16));
+                    ctx.fillRect(150 - (100 / 16), 100 - (100 / 16), (100 / 16), 300 + (100 / 16) * 2);
+                    ctx.fillRect(350, 100 - (100 / 16), (100 / 16), 300 + (100 / 16) * 2);
+                    ctx.fillRect(150 - (100 / 16), 400, 200 + (100 / 16) * 2, (100 / 16));
                     break;
                 case 3:
                     ctx.fillStyle = colors[0];
@@ -650,9 +659,11 @@
         function drawCR2ColorRiot() {
             cr2ColorRiotMode = cr2ColorRiotMode % 3;
             if (cr2ColorRiotMode === 0) return;
-            const p = getClosestPlayers(center)
-            drawCircle(p[0], 50, cr2ColorRiotMode>1?"red":"blue", 0.5);
-            drawCircle(p[7], 50, cr2ColorRiotMode>1?"blue":"red", 0.5);
+            const p = getClosestPlayers(Enemys[0])
+            drawCircle(p[0], 150, cr2ColorRiotMode>1?"red":"blue", 0.5);
+            drawCircle(p[7], 150, cr2ColorRiotMode>1?"blue":"red", 0.5);
+        //    drawCircle(p[0], 50, cr2ColorRiotMode > 1 ? "red" : "blue", 0.5);
+        //    drawCircle(p[7], 50, cr2ColorRiotMode > 1 ? "blue" : "red", 0.5);
         }
 
         function toggleCR2DoubleGraffitiNS() {
@@ -770,7 +781,7 @@
                 drawCircle({ x: 60, y: 250 }, 225, 'brown', 0.2);
 
                 Players.forEach((p) => {
-                    drawCircle(p, 150, 'orange', 0.2);
+                    drawCircle(p, 50, 'orange', 0.2);
                 });
 
             }
@@ -786,6 +797,28 @@
                         }
                     });
                 });
+            }
+        }
+
+        function toggleCR3BlowSeed() {
+            cr3BlowSeedMode++;
+            drawImage();
+        }
+
+        function drawCR3BlowSeed() {
+            cr3BlowSeedMode = cr3BlowSeedMode % 2;
+            if (cr3BlowSeedMode === 0) return;
+
+            drawCircle(Players[0], 60, 'orange', 0.7);
+            drawCircle(Players[1], 60, 'orange', 0.7);
+            drawCircle(Players[2], 60, 'red', 0.7);
+            drawCircle(Players[3], 60, 'red', 0.7);
+
+            for (a = 0; a < 8; a++) {
+                drawRectFromAngle(Players[4], a * Math.PI / 4, 40, 500, 'green', 0.4);
+                drawRectFromAngle(Players[5], a * Math.PI / 4, 40, 500, 'green', 0.4);
+                drawRectFromAngle(Players[6], a * Math.PI / 4, 40, 500, 'blue', 0.4);
+                drawRectFromAngle(Players[7], a * Math.PI / 4, 40, 500, 'blue', 0.4);
             }
         }
 
